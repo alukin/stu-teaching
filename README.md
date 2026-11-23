@@ -16,7 +16,7 @@
 
 Курс міститиме лекції, лабораторні роботи та приклади використання відкритих програмних платформ.
 
-- **[Лабораторна робота №5 — Дослідження принципів технології Blockchain](distributed-systems/labs/lab-05-blockchain/README.md)** (матеріали готуються).
+- **[Лабораторна робота №5 — Дослідження принципів технології Blockchain](distributed-systems/labs/lab-05-blockchain/README.md)** — методичні вказівки та Java-приклад.
 - Попередні лабораторні роботи й інші матеріали будуть додані поступово.
 
 ### 2. [Криптографічний захист програм і комунікацій (Cryptographic Protection of Software and Communications)](cryptographic-protection/README.md)
