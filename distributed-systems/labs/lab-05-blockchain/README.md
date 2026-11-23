@@ -43,15 +43,15 @@ SHA-256 повертає 256-бітний результат, який прог�
 
 ## Початковий код
 
-Три класи в каталозі [`src/main/java/edu/stu/blockchain/`](src/main/java/edu/stu/blockchain/):
+Три класи в каталозі [`src/main/java/ua/cn/stu/blockchain/`](src/main/java/ua/cn/stu/blockchain/):
 
 | Клас | Призначення |
 | --- | --- |
-| [`Block.java`](src/main/java/edu/stu/blockchain/Block.java) | Дані блоку, SHA-256, перебір `nonce` |
-| [`Blockchain.java`](src/main/java/edu/stu/blockchain/Blockchain.java) | Створення genesis, додавання блоків, перевірка ланцюга |
-| [`Main.java`](src/main/java/edu/stu/blockchain/Main.java) | Експерименти та виведення результатів |
+| [`Block.java`](src/main/java/ua/cn/stu/blockchain/Block.java) | Дані блоку, SHA-256, перебір `nonce` |
+| [`Blockchain.java`](src/main/java/ua/cn/stu/blockchain/Blockchain.java) | Створення genesis, додавання блоків, перевірка ланцюга |
+| [`Main.java`](src/main/java/ua/cn/stu/blockchain/Main.java) | Експерименти та виведення результатів |
 
-**Відкриття в IDE.** Відкрийте [файл `pom.xml`](pom.xml) або каталог `lab-05-blockchain` як **Maven-проєкт**. IDE автоматично визначить `src/main/java` як каталог вихідних файлів. Виберіть JDK 17+ та запустіть метод `main()` класу `edu.stu.blockchain.Main`; аргумент програми `3` можна задати в конфігурації запуску.
+**Відкриття в IDE.** Відкрийте [файл `pom.xml`](pom.xml) або каталог `lab-05-blockchain` як **Maven-проєкт**. IDE автоматично визначить `src/main/java` як каталог вихідних файлів. Виберіть JDK 17+ та запустіть метод `main()` класу `ua.cn.stu.blockchain.Main`; аргумент програми `3` можна задати в конфігурації запуску.
 
 **Збирання та запуск у терміналі** з каталогу `lab-05-blockchain`:
 

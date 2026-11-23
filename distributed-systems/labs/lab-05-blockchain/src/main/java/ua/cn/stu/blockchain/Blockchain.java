@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 Oleksiy Lukin
-package edu.stu.blockchain;
+package ua.cn.stu.blockchain;
 
 import java.util.ArrayList;
 import java.util.List;
