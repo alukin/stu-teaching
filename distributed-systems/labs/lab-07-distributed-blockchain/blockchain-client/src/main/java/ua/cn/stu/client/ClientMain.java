@@ -14,7 +14,7 @@ import java.util.*;
 @QuarkusMain
 @Command(name="blockchain-client",mixinStandardHelpOptions=true,description="Lab 07 console client",
     subcommands={ClientMain.Demo.class,ClientMain.Create.class,ClientMain.Balance.class,
-       ClientMain.Send.class,ClientMain.Status.class,ClientMain.Mine.class,
+       ClientMain.Send.class,ClientMain.Status.class,ClientMain.Mine.class,ClientMain.Miner.class,
        ClientMain.Tx.class,ClientMain.Peers.class,ClientMain.Disconnect.class,ClientMain.Reconnect.class})
 public class ClientMain implements Runnable,QuarkusApplication {
     @Inject CommandLine.IFactory factory;
@@ -65,6 +65,19 @@ public class ClientMain implements Runnable,QuarkusApplication {
     static class Status implements Runnable { @ParentCommand ClientMain root;@Override public void run(){root.execute("STATUS",Map.of());} }
     @Command(name="mine",description="Mine one block (includes pending transactions or an empty block)")
     static class Mine implements Runnable { @ParentCommand ClientMain root;@Override public void run(){root.execute("MINE",Map.of());} }
+    @Command(name="miner",description="Read or set automatic mining: miner [on|off|status]")
+    static class Miner implements Runnable {
+        @ParentCommand ClientMain root;
+        @Parameters(index="0",arity="0..1",defaultValue="status",description="on | off | status") String mode;
+        @Override public void run(){
+            switch(mode.toLowerCase(Locale.ROOT)){
+                case "on" -> root.execute("MINER_ON",Map.of());
+                case "off" -> root.execute("MINER_OFF",Map.of());
+                case "status" -> root.execute("MINER_STATUS",Map.of());
+                default -> throw new IllegalArgumentException("Expected miner on, off or status");
+            }
+        }
+    }
     @Command(name="tx",description="Read transaction status")
     static class Tx implements Runnable {
         @ParentCommand ClientMain root;@Option(names="--id",required=true)String id;

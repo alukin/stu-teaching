@@ -13,7 +13,7 @@ public final class Wire {
     public record Tx(String id,String signer,List<String> inputs,List<Output> outputs,String signature,boolean genesis) {}
     public record BlockData(String previousHash,long timestamp,long nonce,String hash,List<Tx> transactions) {}
     public record Utxo(String id,String owner,long amount) {}
-    public record Status(String node,String genesis,int height,String tip,long work,int knownBlocks,String utxoFingerprint,int mempool) {}
+    public record Status(String node,String genesis,int height,String tip,long work,int knownBlocks,String utxoFingerprint,int mempool,boolean minerEnabled) {}
     public record Envelope(String type,String requestId,String sender,String genesis,JsonNode payload) {}
     public record Error(String message) {}
     public record Mine(List<String> txIds) {}

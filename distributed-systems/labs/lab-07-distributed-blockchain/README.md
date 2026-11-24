@@ -63,7 +63,7 @@ flowchart TB
 
 Типи P2P-повідомлень: `HELLO`, `HELLO_ACK`, `NEW_TX`, `NEW_BLOCK`, `GET_CHAIN`, `CHAIN`, `ERROR`. `GET_CHAIN` передає запит на поточну обрану гілку, а `CHAIN` — впорядкований список її блоків, включно з Genesis. Це навмисно простий протокол для **трьох локальних вузлів**, а не оптимізований протокол Bitcoin.
 
-Команди `/client`: `STATUS`, `UTXOS`, `SUBMIT_TX`, `TX_STATUS`, `MINE`, `PEERS`, `DISCONNECT`, `RECONNECT`.
+Команди `/client`: `STATUS`, `UTXOS`, `SUBMIT_TX`, `TX_STATUS`, `MINE`, `MINER_STATUS`, `MINER_ON`, `MINER_OFF`, `PEERS`, `DISCONNECT`, `RECONNECT`.
 
 **Важливо:** JSON — тільки транспортне представлення. Поля публічних ключів X.509 і підписів передаються Base64; `txId`, підписи та хеш блока обчислюються за **однозначним бінарним форматом**, успадкованим із лабораторної №6. Зміна порядку полів JSON не змінює криптографічну ідентичність. Отримані дані перевіряються повторно.
 
@@ -87,6 +87,20 @@ flowchart LR
 
 Вузол веде локальний **mempool** (набір прийнятих, але ще не включених до обраного ланцюга транзакцій). Кожна транзакція спершу перевіряється відносно UTXO з урахуванням уже прийнятих транзакцій mempool. Повторні повідомлення не створюють дублікати. При реорганізації вміст mempool проходить повторну перевірку.
 
+### Автоматичний майнінг
+
+У цій лабораторній **майнер — звичайний вузол**, який формує блоки з транзакцій у власному mempool. [`MinerService`](blockchain-node/src/main/java/ua/cn/stu/node/MinerService.java) використовує Quarkus Scheduler: якщо автоматичний майнінг увімкнено й mempool непорожній, вузол перевіряє транзакції, виконує PoW і розсилає `NEW_BLOCK` сусідам.
+
+Початковий режим — **вимкнений** (`NODE_MINER_ENABLED=false`); інтервал — **5 секунд** (`NODE_MINER_INTERVAL=5s`). У наведеному запуску A — автоматичний майнер, а B і C — вузли, які перевіряють і ретранслюють блоки. Будь-який інший вузол можна увімкнути як майнер без перезапуску через команду `miner`:
+
+```bash
+java -jar blockchain-client/target/quarkus-app/quarkus-run.jar --node ws://localhost:8081/client miner status
+java -jar blockchain-client/target/quarkus-app/quarkus-run.jar --node ws://localhost:8082/client miner on
+java -jar blockchain-client/target/quarkus-app/quarkus-run.jar --node ws://localhost:8082/client miner off
+```
+
+Команда `status` показує `minerEnabled`. **Автоматичний майнер не створює порожні блоки**; ручна команда `mine` лишається доступною і може створити порожній блок для експериментів із forks. За одночасно активних майнерів можливі конкурентні блоки. Майнінг не виконується в потоці обробки WebSocket-повідомлень, а оновлення стану захищені тією ж синхронізацією `NodeService`.
+
 ## Підготовка і запуск
 
 Потрібні JDK 25, Maven 3.9+, доступ до Maven Central під час першого складання. Ресурси комп'ютера: достатньо трьох звичайних Java-процесів, контейнерів та зовнішньої БД немає.
@@ -101,7 +115,7 @@ mvn -DskipTests package
 Відкрийте **три термінали** в корені `lab-07-distributed-blockchain`. Запустіть вузли (кожний рядок в окремому терміналі):
 
 ```bash
-NODE_NAME=A NODE_PORT=8081 NODE_PEERS='B@ws://localhost:8082,C@ws://localhost:8083' \
+NODE_MINER_ENABLED=true NODE_NAME=A NODE_PORT=8081 NODE_PEERS='B@ws://localhost:8082,C@ws://localhost:8083' \
   java -jar blockchain-node/target/quarkus-app/quarkus-run.jar
 
 NODE_NAME=B NODE_PORT=8082 NODE_PEERS='A@ws://localhost:8081,C@ws://localhost:8083' \
@@ -124,26 +138,27 @@ java -jar blockchain-client/target/quarkus-app/quarkus-run.jar wallet-create --n
 java -jar blockchain-client/target/quarkus-app/quarkus-run.jar --node ws://localhost:8081/client status
 java -jar blockchain-client/target/quarkus-app/quarkus-run.jar --node ws://localhost:8081/client balance --wallet alice
 java -jar blockchain-client/target/quarkus-app/quarkus-run.jar --node ws://localhost:8081/client send --from alice --to bob --amount 40
-java -jar blockchain-client/target/quarkus-app/quarkus-run.jar --node ws://localhost:8082/client mine
+# Після одного або кількох циклів автоматичного майнера A:
+java -jar blockchain-client/target/quarkus-app/quarkus-run.jar --node ws://localhost:8081/client miner status
 java -jar blockchain-client/target/quarkus-app/quarkus-run.jar --node ws://localhost:8083/client balance --wallet bob
 ```
 
-Через коротку затримку поширення перед останньою командою переконайтеся, що всі вузли мають однаковий `tip` (команда `status`). `send` відправляє **підписану** транзакцію без приватного ключа. Після `send` баланс на підтвердженому UTXO ще не змінився; після `mine` на одному вузлі й синхронізації зміниться на всіх.
+Через коротку затримку поширення перед останньою командою переконайтеся, що всі вузли мають однаковий `tip` (команда `status`). `send` відправляє **підписану** транзакцію без приватного ключа. Після `send` баланс на підтвердженому UTXO ще не змінився; після автоматичного майнінгу на A й синхронізації зміниться на всіх. Для ручних експериментів спочатку вимкніть майнер A за допомогою `miner off`.
 
-**Quarkus Dev UI:** щоб запустити вузол A у режимі розробки, після збірки виконайте `NODE_NAME=A NODE_PORT=8081 NODE_PEERS='B@ws://localhost:8082,C@ws://localhost:8083' mvn -f blockchain-node/pom.xml quarkus:dev`. Інші два вузли можна залишити звичайними JVM-процесами. Сторінка Dev UI: `http://localhost:8081/q/dev-ui`. WebSocket-повідомлення додатково видно в DEBUG-логах Quarkus. Dev UI доступний тільки в **dev mode**.
+**Quarkus Dev UI:** щоб запустити вузол A у режимі розробки, після збірки виконайте `NODE_MINER_ENABLED=true NODE_NAME=A NODE_PORT=8081 NODE_PEERS='B@ws://localhost:8082,C@ws://localhost:8083' mvn -f blockchain-node/pom.xml quarkus:dev`. Інші два вузли можна залишити звичайними JVM-процесами. Сторінка Dev UI: `http://localhost:8081/q/dev-ui`. WebSocket-повідомлення додатково видно в DEBUG-логах Quarkus. Dev UI доступний тільки в **dev mode**.
 
 ## Демонстрація викладача
 
 1. Показати `genesis.json`, `JsonCodec.createChain()`, `Chain` і самостійні `Ledger` трьох вузлів. Порівняти `genesis` та `utxoFingerprint`.
 2. Поставити breakpoint у `ClientEndpoint.receive()`, `NodeService.submit()`, `PeerEndpoint.receive()` та `OutboundPeer.received()`. Надіслати транзакцію з клієнта, простежити **WebSocket → Jackson JSON → Transaction → Ledger**.
-3. Замайнити блок на B, простежити `Chain.accept()`, відправлення `NEW_BLOCK`, оновлення статусу C.
+3. Простежити `MinerService.minePending()` на A, виклик `Chain.accept()`, відправлення `NEW_BLOCK` і стан C. Потім вимкнути майнер A й створити блок вручну на B.
 4. Показати мережеве розділення та конкурентний майнінг. Після відновлення зв'язку перейти в `Chain.importPath()` і `Ledger.fingerprint()`.
 
 ## Самостійні експерименти
 
 ### Експеримент 1. Поширення транзакції
 
-Створіть Bob і Charlie. Через `/client` вузла A надішліть 40 одиниць Alice → Bob, перевірте `mempool` у `status` трьох вузлів і замайніть блок на B. Поясніть, чому до майнінгу `balance` не змінюється. Знайдіть у debugger, де перевіряються підпис та право витратити UTXO.
+Створіть Bob і Charlie. Через `/client` вузла A надішліть 40 одиниць Alice → Bob, перевірте `mempool` у `status` трьох вузлів і дочекайтеся автоматичного майнінгу на A. Поясніть, чому до майнінгу `balance` не змінюється. Знайдіть у debugger, де перевіряються підпис та право витратити UTXO.
 
 ### Експеримент 2. Синхронізація вузла, що відстав
 
@@ -151,11 +166,13 @@ java -jar blockchain-client/target/quarkus-app/quarkus-run.jar --node ws://local
 
 ### Експеримент 3. Fork і зміна обраної історії
 
-Повторіть розділення мережі: вузли A/B залишаються разом, а C ізольований. На A створіть **два** нові блоки, а на C — **один**. Зверніть увагу, що `mine` дозволяє створювати порожні блоки спеціально для демонстрації PoW та fork. Відновіть зв'язок. Переконайтеся, що після синхронізації усі вузли обрали гілку A. Перевірте, чи зберігається альтернативний блок C в `knownBlocks`, і чи однаковий `utxoFingerprint`. Поясніть різницю між валідним блоком і блоком обраного ланцюга.
+Для відтворюваності спочатку вимкніть автоматичний майнінг на всіх вузлах (команда `miner off`). Повторіть розділення мережі: вузли A/B залишаються разом, а C ізольований. На A створіть **два** нові блоки, а на C — **один**. Зверніть увагу, що `mine` дозволяє створювати порожні блоки спеціально для демонстрації PoW та fork. Відновіть зв'язок. Переконайтеся, що після синхронізації усі вузли обрали гілку A. Перевірте, чи зберігається альтернативний блок C в `knownBlocks`, і чи однаковий `utxoFingerprint`. Поясніть різницю між валідним блоком і блоком обраного ланцюга.
 
 ### Експеримент 4. Недовірені повідомлення та ідентичність мережі
 
 У debugger змініть поле `hash` в отриманому JSON-блоці або `amount` у підписаній транзакції. Перевірте, які саме перевірки відхиляють зміну. Окремо змініть `genesis.json` у **локальному експериментальному проєкті** та перевірте, чому `JsonCodec.GENESIS_HASH` не дозволяє запустити несумісну мережу. Не змінюйте оригінальні навчальні ресурси в Git.
+
+**Додатковий експеримент:** увімкніть майнінг на A і B, надішліть одну транзакцію та дослідіть можливість появи конкурентних блоків. Якщо fork не виник, це нормально: при невеликій складності один вузол часто встигає розіслати блок раніше за інший.
 
 ## Таблиця результатів
 

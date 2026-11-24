@@ -14,13 +14,17 @@ import java.util.*;
 public class NodeService {
     @ConfigProperty(name="node.name",defaultValue="A") String name;
     @Inject PeerLinks links;
+    @ConfigProperty(name="node.miner.enabled",defaultValue="false") boolean configuredMiner;
     private Chain chain;
+    private volatile boolean minerEnabled;
     private final Map<String,Transaction> mempool=new LinkedHashMap<>();
-    @PostConstruct void init(){chain=JsonCodec.createChain();}
+    @PostConstruct void init(){chain=JsonCodec.createChain();minerEnabled=configuredMiner;}
+    public boolean minerEnabled(){return minerEnabled;}
+    public void setMinerEnabled(boolean enabled){minerEnabled=enabled;}
     public String name(){return name;}
     public synchronized String genesis(){return chain.genesisHash();}
     public synchronized Wire.Status status(){
-        return new Wire.Status(name,chain.genesisHash(),chain.height(),chain.tip(),chain.accumulatedWork(),chain.knownBlocks(),chain.state().fingerprint(),mempool.size());
+        return new Wire.Status(name,chain.genesisHash(),chain.height(),chain.tip(),chain.accumulatedWork(),chain.knownBlocks(),chain.state().fingerprint(),mempool.size(),minerEnabled);
     }
     public synchronized List<Wire.BlockData> selectedBlocks(){return chain.selectedPath().stream().map(Wire::from).toList();}
     public synchronized List<Wire.Utxo> utxos(String owner){
@@ -40,6 +44,11 @@ public class NodeService {
         state.apply(tx);
         mempool.put(tx.id(),tx);
         return true;
+    }
+    /** Automatic mining only packs pending transactions. Manual MINE also permits empty blocks. */
+    public synchronized Block minePending(){
+        if(!minerEnabled||mempool.isEmpty())return null;
+        return mine();
     }
     public synchronized Block mine(){
         List<Block> old=chain.selectedPath();
@@ -124,6 +133,15 @@ public class NodeService {
                     boolean accepted=submit(tx);
                     if(accepted)announceTx(tx,null);
                     yield reply(request,"SUBMIT_RESULT",Map.of("accepted",accepted,"txId",tx.id()));
+                }
+                case "MINER_STATUS" -> reply(request,"MINER_RESULT",Map.of("enabled",minerEnabled()));
+                case "MINER_ON" -> {
+                    setMinerEnabled(true);
+                    yield reply(request,"MINER_RESULT",Map.of("enabled",true));
+                }
+                case "MINER_OFF" -> {
+                    setMinerEnabled(false);
+                    yield reply(request,"MINER_RESULT",Map.of("enabled",false));
                 }
                 case "MINE" -> {
                     Block block=mine();announceBlock(block,null);
