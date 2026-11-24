@@ -18,6 +18,7 @@
 
 - **[Лабораторна робота №5 — Дослідження принципів технології Blockchain](distributed-systems/labs/lab-05-blockchain/README.md)** — методичні вказівки та Java-приклад.
 - **[Лабораторна робота №6 — Транзакції, цифрові підписи та блоки](distributed-systems/labs/lab-06-blockchain-transactions/README.md)** — робота з UTXO, цифровими підписами, перевіркою та пакуванням транзакцій у блоки.
+- **[Лабораторна робота №7 — Розподілений Blockchain: P2P-мережа та консенсус](distributed-systems/labs/lab-07-distributed-blockchain/README.md)** — Java 25, Quarkus, WebSocket/JSON, кілька вузлів, forks і відновлення UTXO.
 - Попередні лабораторні роботи й інші матеріали будуть додані поступово.
 
 ### 2. [Криптографічний захист програм і комунікацій (Cryptographic Protection of Software and Communications)](cryptographic-protection/README.md)

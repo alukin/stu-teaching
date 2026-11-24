@@ -1,0 +1,21 @@
+{
+  "previousHash": "0",
+  "timestamp": 1795540000000,
+  "nonce": 133,
+  "hash": "0080a43b6fda7c911231435c98029509bb68dff96b31e805fa56d371202c330f",
+  "transactions": [
+    {
+      "id": "23be4f07e2d2f812c4bc63781094e7fabd7250cf89a8bc2a6f40dd674e004fad",
+      "signer": null,
+      "inputs": [],
+      "outputs": [
+        {
+          "owner": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAELqmA5TAVEnYCxPxdQ7ltpQtaLoHCijgDmUES5UI9rbVQGCjq7hdoxxFpSCANB9n9753lX8ClYMTD3DnCJ2MdMQ==",
+          "amount": 100
+        }
+      ],
+      "signature": "",
+      "genesis": true
+    }
+  ]
+}
